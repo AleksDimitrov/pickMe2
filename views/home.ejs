@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/script.js" type="module"></script>
+    <title>KindOfDay</title>
+</head>
+
+<body>
+    <div class="screen">
+        <h1>Button1 or Button2?</h1>
+        <div class="box1"><input type="button" id="button1" value="button1" /> <h3 class="winnerText" id="hbutton1"></h3></div>
+        <div class="box2"><input type="button" id="button2" value="button2" /> <h3 class="winnerText" id="hbutton2"></h3></div>
+        <h3 class="winnerText" id="announcer"></h3>
+        <h1 id="counter">0</h1>
+    </div>
+    <script src="https://cdn.socket.io/4.5.3/socket.io.min.js" integrity="sha384-WPFUvHkB1aHA5TDSZi6xtDgkF0wXJcIIxXhC6h8OT8EH3fC5PWro5pWJ1THjcfEi" crossorigin="anonymous"></script>
+
+    <script>
+        var socket = io.connect('http://localhost:3000');
+        var messages = document.getElementById('messages');
+
+        var button1 = document.getElementById('button1');
+
+        if(button1){
+            button1.addEventListener("click", function(e) {
+                socket.emit('button click', {'id':'button1'});
+            });
+        }   
+        var button2 = document.getElementById('button2');
+        if(button2){
+            button2.addEventListener("click", function(e) {
+                socket.emit('button click', {'value': button2.value, 'id':'button2'});
+            });
+        }   
+
+        var voted = false;
+        socket.on('button msg', function(msg) {
+            for (const [key, value] of Object.entries(msg.answers)) {
+                document.getElementById("h" + key).innerHTML = value;
+            }
+            console.log(msg.winner);
+            if (msg.winner.length == 1) {
+                document.getElementById("announcer").innerHTML = "By majority vote: <i id='winner'>" + msg.winner[0] + "</i>";
+            } else {
+                let winnerString = ""
+                msg.winner.forEach(function(e) {
+                   winnerString = winnerString + "," + e; 
+                });
+                winnerString = winnerString.slice(1,winnerString.length);
+                document.getElementById("announcer").innerHTML = "There was a tie between: <i id='winner'>" + winnerString + "</i>";
+            }
+            // document.getElementById("button1").style.backgroundColor = "darkolivegreen";
+            // document.getElementById("button2").style.backgroundColor = "saddlebrown";
+
+        });
+
+        socket.on('reset msg', function(msg) {
+            for (const [key, value] of Object.entries(msg.answers)) {
+                document.getElementById("h" + key).innerHTML = "";
+                document.getElementById("announcer").innerHTML = "";
+            }
+            document.getElementById("button1").style.backgroundColor = "darkolivegreen";
+            document.getElementById("button2").style.backgroundColor = "saddlebrown";
+            voted = false;
+        });
+
+        socket.on('counter', function(msg) { 
+            document.getElementById('counter').innerHTML = msg + " sec";
+        });
+
+        document.getElementById("button1").addEventListener("click", function onClick(event) {
+            if (voted === false) {
+                event.target.style.backgroundColor = "yellow";
+                voted = true;
+            }
+        });
+        document.getElementById("button2").addEventListener("click", function onClick(event) {
+            if (voted === false) {
+                event.target.style.backgroundColor = "yellow";
+                voted = true;
+            }
+        });
+
+    </script>
+</body>
+
+</html>
