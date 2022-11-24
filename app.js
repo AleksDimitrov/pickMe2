@@ -1,3 +1,4 @@
+const { Console } = require('console');
 const e = require('express');
 const express = require('express')
 const app = express()
@@ -14,24 +15,27 @@ const port = 3000
 app.set("view engine", "ejs");
 app.use(express.static("public"));
 
-app.get('/', (req, res) => {
-    const newRoomName = "default".toUpperCase();
+app.get("/", (req, res) => {
+    let newRoomName = "default".toUpperCase();
     res.render("home", {"room":newRoomName});
-})
+});
 
-app.get('/:newRoom', (req, res) => {
-    res.render("home", )
-})
+app.get("/:newRoom", (req, res) => {
+    let newRoomName = req.params.newRoom;
+    res.render("home", {"room":newRoomName});
+});
 
-var holdAnswers = {}; // Dictionary of counter of votes on each box
-var voters = [];
-var boxes = 2;
+// var holdAnswers = {}; // Dictionary of counter of votes on each box
+// var voters = [];
+var roomsData = {};
 
-function resetAnswers() {
-    holdAnswers = {};
+function emptyChoices(room) {
+
+    roomsData[room]["holdAnswers"] = {}
     // Started index at 1, because element id's start at at button1.
-    for (let box = 1; box <= boxes; box++){
-         holdAnswers["button" + box] = 0;
+    let roomBoxes = roomsData[room]["boxes"];
+    for (let box = 1; box <= roomBoxes; box++){
+        roomsData[room]["holdAnswers"]["button" + box] = 0;
     }
 }
 
@@ -53,53 +57,90 @@ function getWinner(currAnswers) {
     return winners;
 }
 
-resetAnswers();
+function initializeRoom(room) {
+    roomInfo = {"counter": 0, "voters": [], "boxes":2, "holdAnswers":{}, "gameTime": 10};
+    roomInfo["roundTime"] = Math.floor(roomInfo["gameTime"]*1.5);
+    roomsData[room] = roomInfo;
+}
+
+function checkRoomRemoval(room) {
+    delete roomsData[room];
+}
 
 io.on('connection', (socket) => {
+    socket.on('create', function(room) {
+
+        console.log("UserJoinedAt" + " " + room);
+        console.log("current rooms after cn", socket.rooms); // the Set contains at least the socket ID
+        var clients = io.sockets.adapter.rooms.get(room);
+        var numClients = clients ? clients.size : 0;
+        
+        // 0 Users connected to room, therefore room is empty.
+        if (numClients == 0) {
+            initializeRoom(room);
+            console.log(roomsData[room]);
+            emptyChoices(room);
+        }
+
+        socket.join(room);
+    });
+
+    socket.on("disconnecting", () => {
+        console.log("current rooms after dcing", socket.rooms); // the Set contains at least the socket ID
+        checkRoomRemoval(); 
+    });
+
     console.log('a user connected');
     socket.on('button click', (msg) => {
-        console.log(holdAnswers);
-        if (!voters.includes(socket.id)) {
-            voters.push(socket.id);
-            holdAnswers[msg.id]++;
+        //Voters reinforces one vote per socketid. If socket id has been recorded, then that id has voted.
+        if (!roomsData[msg["roomCode"]]["voters"].includes(socket.id)) {
+            roomsData[msg["roomCode"]]["voters"].push(socket.id);
+            roomsData[msg["roomCode"]]["holdAnswers"][msg.id]++;
+            console.log(roomsData[msg["roomCode"]]["holdAnswers"]);
         }
     });
 
     socket.on('sent message', (msg) => {
-        socket.emit("recieve message", msg);
+        console.log("SENDING TO: " + msg.roomCode);
+        socket.nsp.to(msg.roomCode).emit("recieve message", msg.text);
     });
 
 
     setInterval(() => {
-        if (counter < gameTime) {
-            socket.emit('counter', counter);
-        }  else {
-            socket.emit('counter', "restarting in " + (roundTime-counter) + " ");
-        }
-        //Round ends 1 second after playtime.
-        if (counter == gameTime+1) {
-            //winningKey is a reduce function that determines key with highest value.
-            // !TODO Winner determiner only supports two options.
-            let winners = getWinner(holdAnswers);
-            io.emit('button msg', { 'answers': holdAnswers, 'winner': winners});
-        // Answers are cleared 2 seconds before gametime ends.
-        } else if (counter == roundTime) {
-            io.emit('reset msg', { 'answers': holdAnswers});
-            resetAnswers();
-            voters = [];
+        for (key in roomsData) {
+            if (roomsData[key]["counter"] < roomsData[key]["gameTime"]) {
+                socket.nsp.to(key).emit('counter', (roomsData[key]["gameTime"]-roomsData[key]["counter"]) + " seconds left");
+            }  else {
+                socket.nsp.to(key).emit('counter', "restarting in " + (roomsData[key]["roundTime"]-roomsData[key]["counter"]) + " ");
+            }
+            //Round ends 1 second after playtime.
+            if (roomsData[key]["counter"] == roomsData[key]["gameTime"]+1) {
+                //winningKey is a reduce function that determines key with highest value.
+                // !TODO Winner determiner only supports two options.
+                let winners = getWinner(roomsData[key]["holdAnswers"]);
+                socket.nsp.to(key).emit('button msg', { 'answers': roomsData[key]["holdAnswers"], 'winner': winners});
+            // Answers are cleared 2 seconds before gametime ends.
+            } else if (roomsData[key]["counter"] == roomsData[key]["roundTime"]) {
+                socket.nsp.to(key).emit('reset msg', { 'answers': roomsData[key]["holdAnswers"]});
+                emptyChoices(key);
+                roomsData[key]["voters"] = [];
+            }
         }
     }, 500);
 });
 
-var gameTime = 10;
-var roundTime = Math.floor(gameTime*1.5);
-var counter = 0;
+// var gameTime = 10;
+// var roundTime = Math.floor(gameTime*1.5);
+// var counter = 0;
 setInterval(() => {
-    // (gameTime*1.5) indicates full round time. gameTime is playTime, 1.5* represents results time as well.
-    if (counter < roundTime) { 
-        counter++;
-    } else {
-        counter = 0;
+    for (key in roomsData) {
+        console.log("RUNNING", key, roomsData[key]["counter"], "->", roomsData[key]["roundTime"]);
+        // (gameTime*1.5) indicates full round time. gameTime is playTime, 1.5* represents results time as well.
+        if (roomsData[key]["counter"] < roomsData[key]["roundTime"]) { 
+            roomsData[key]["counter"] = roomsData[key]["counter"]+1;
+        } else {
+            roomsData[key]["counter"] = 0;
+        }
     }
 }, 1000);
 

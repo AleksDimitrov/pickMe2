@@ -13,8 +13,8 @@
 
 <body>
     <div class="h-100 content">
-
-        <div class="first" id="room-info">Geeks 1</div>
+        <input id="room-code" value="<%=room%>">
+        <div class="first" id="room-info" value="<%=room%>"><%=room%></div>
         <div class="second" id="game-main">
             <div class="screen">
                 <h1>Button1 or Button2?</h1>
@@ -40,19 +40,21 @@
 
     <script>
         var socket = io.connect('http://localhost:3000');
+        var roomCode = document.querySelector('#room-code').value;
+        socket.emit('create', roomCode);
+
         var messages = document.getElementById('messages');
 
         var button1 = document.getElementById('button1');
-
         if(button1){
             button1.addEventListener("click", function(e) {
-                socket.emit('button click', {'id':'button1'});
+                socket.emit('button click', {'id':'button1', 'roomCode':roomCode});
             });
         }   
         var button2 = document.getElementById('button2');
         if(button2){
             button2.addEventListener("click", function(e) {
-                socket.emit('button click', {'value': button2.value, 'id':'button2'});
+                socket.emit('button click', {'value': button2.value, 'id':'button2', 'roomCode':roomCode});
             });
         }   
 
@@ -116,7 +118,7 @@
             let text = document.querySelector("#message-box").value;
             if (text.length != 0) {
                 document.querySelector("#message-box").value = "";
-                socket.emit('sent message', text);
+                socket.emit('sent message', {"text":text, 'roomCode':roomCode});
             }
         });
 
@@ -126,7 +128,7 @@
                 let text = document.querySelector("#message-box").value;
                 if (text.length != 0) {
                     document.querySelector("#message-box").value = "";
-                    socket.emit('sent message', text);
+                    socket.emit('sent message', {"text": text, 'roomCode':roomCode});
                 }
             }
         });

@@ -35,7 +35,7 @@ input {
 }
 
 .winnerText {
-    color: gray;
+    color: mediumspringgreen;
 }
 
 #winner {
@@ -71,7 +71,7 @@ input {
 
 .second {
     flex: 2;
-    background-color: purple;
+    background-color: grey;
 }
 
 .third {
@@ -80,4 +80,12 @@ input {
     display:flex;
     flex-direction: column;
     justify-content: space-between;
+}
+
+#room-code {
+    display:none;
+}
+
+li {
+    font-size: 70px;
 }
