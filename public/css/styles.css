@@ -1,6 +1,12 @@
-html{
-    background-color:burlywood;
+html { 
+    height: 100%; 
+    
+}
+
+body {
+    background-color: burlywood !important;
     text-align:center;
+    height: 100%;
 }
 
 .box1 {
@@ -34,4 +40,44 @@ input {
 
 #winner {
     color: maroon;
+}
+
+#message-box {
+    display: inline-block;
+    width: 70%;
+    margin-bottom: auto; 
+}
+
+#send-message {
+    display: inline-block;
+    flex: 1;
+}
+
+.message-form {
+    display: flex;
+    width: 100%;
+}
+
+.content {
+    display: flex;
+    width: 100%;
+    text-align:center;
+}
+
+.first {
+    flex: 1;
+    background-color:aqua;
+}
+
+.second {
+    flex: 2;
+    background-color: purple;
+}
+
+.third {
+    flex: 1;
+    background-color:aqua;
+    display:flex;
+    flex-direction: column;
+    justify-content: space-between;
 }

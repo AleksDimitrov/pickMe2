@@ -3,8 +3,11 @@ const express = require('express')
 const app = express()
 const http = require('http');
 const server = http.createServer(app);
-const { Server } = require("socket.io");
-const io = new Server(server);
+const io = require("socket.io")(server, {
+    cors: {
+        origin: '*',
+    }
+});
 
 const port = 3000
 
@@ -12,7 +15,12 @@ app.set("view engine", "ejs");
 app.use(express.static("public"));
 
 app.get('/', (req, res) => {
-    res.render("home")
+    const newRoomName = "default".toUpperCase();
+    res.render("home", {"room":newRoomName});
+})
+
+app.get('/:newRoom', (req, res) => {
+    res.render("home", )
 })
 
 var holdAnswers = {}; // Dictionary of counter of votes on each box
@@ -55,6 +63,10 @@ io.on('connection', (socket) => {
             voters.push(socket.id);
             holdAnswers[msg.id]++;
         }
+    });
+
+    socket.on('sent message', (msg) => {
+        socket.emit("recieve message", msg);
     });
 
 
