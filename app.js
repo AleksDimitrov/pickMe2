@@ -13,21 +13,24 @@ const io = require("socket.io")(server, {
 const port = 3000
 
 app.set("view engine", "ejs");
-app.use(express.static("public"));
+app.use(express.static(__dirname + "/public"));
 
 app.get("/", (req, res) => {
-    let newRoomName = "default".toUpperCase();
-    res.render("home", {"room":newRoomName});
+    console.log(req.query);
+    res.render("menu");
 });
 
 app.get("/:newRoom", (req, res) => {
     let newRoomName = req.params.newRoom;
-    res.render("home", {"room":newRoomName});
+    let username = req.query.value;
+    console.log(req.query);
+    res.render("home", {"room":newRoomName, "username": username});
 });
 
 // var holdAnswers = {}; // Dictionary of counter of votes on each box
 // var voters = [];
 var roomsData = {};
+var usernames = {};
 
 function emptyChoices(room) {
 
@@ -38,6 +41,7 @@ function emptyChoices(room) {
         roomsData[room]["holdAnswers"]["button" + box] = 0;
     }
 }
+
 
 // Takes in a dictionary and a list representing the keys with highest value.
 // If there is a key with the highest value, an array of size 1 will be returned.
@@ -68,21 +72,28 @@ function checkRoomRemoval(room) {
 }
 
 io.on('connection', (socket) => {
-    socket.on('create', function(room) {
+    socket.on('create', function(msg) {
 
-        console.log("UserJoinedAt" + " " + room);
+        console.log("UserJoinedAt" + " " + msg.room);
         console.log("current rooms after cn", socket.rooms); // the Set contains at least the socket ID
-        var clients = io.sockets.adapter.rooms.get(room);
+        var clients = io.sockets.adapter.rooms.get(msg.room);
         var numClients = clients ? clients.size : 0;
         
         // 0 Users connected to room, therefore room is empty.
         if (numClients == 0) {
-            initializeRoom(room);
-            console.log(roomsData[room]);
-            emptyChoices(room);
+            initializeRoom(msg.room);
+            console.log(roomsData[msg.room]);
+            emptyChoices(msg.room);
         }
 
-        socket.join(room);
+        let exists = Object.values(usernames).includes(msg.username);
+        if (!exists) {
+            usernames[socket.id] = msg.username;
+        }
+        console.log(usernames);
+
+
+        socket.join(msg.room);
     });
 
     socket.on("disconnecting", () => {
@@ -102,7 +113,7 @@ io.on('connection', (socket) => {
 
     socket.on('sent message', (msg) => {
         console.log("SENDING TO: " + msg.roomCode);
-        socket.nsp.to(msg.roomCode).emit("recieve message", msg.text);
+        socket.nsp.to(msg.roomCode).emit("recieve message", usernames[socket.id] + ": " + msg.text);
     });
 
 
@@ -134,7 +145,7 @@ io.on('connection', (socket) => {
 // var counter = 0;
 setInterval(() => {
     for (key in roomsData) {
-        console.log("RUNNING", key, roomsData[key]["counter"], "->", roomsData[key]["roundTime"]);
+        //console.log("RUNNING", key, roomsData[key]["counter"], "->", roomsData[key]["roundTime"]);
         // (gameTime*1.5) indicates full round time. gameTime is playTime, 1.5* represents results time as well.
         if (roomsData[key]["counter"] < roomsData[key]["roundTime"]) { 
             roomsData[key]["counter"] = roomsData[key]["counter"]+1;

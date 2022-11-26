@@ -82,9 +82,10 @@ input {
     justify-content: space-between;
 }
 
-#room-code {
+#room-code, #username-code{
     display:none;
 }
+
 
 li {
     font-size: 70px;

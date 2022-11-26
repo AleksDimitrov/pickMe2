@@ -14,7 +14,12 @@
 <body>
     <div class="h-100 content">
         <input id="room-code" value="<%=room%>">
-        <div class="first" id="room-info" value="<%=room%>"><%=room%></div>
+        <input id="username-code" value="<%=username%>">
+        <div class="first" id="room-info">
+        <h1><%=room%></h1>
+        <h2><%=username%></h2>
+        </div>
+
         <div class="second" id="game-main">
             <div class="screen">
                 <h1>Button1 or Button2?</h1>
@@ -41,7 +46,9 @@
     <script>
         var socket = io.connect('http://localhost:3000');
         var roomCode = document.querySelector('#room-code').value;
-        socket.emit('create', roomCode);
+        var username = document.querySelector('#username-code').value;
+
+        socket.emit('create', {"room":roomCode, "username": username});
 
         var messages = document.getElementById('messages');
 
