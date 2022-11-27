@@ -7,43 +7,103 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/script.js" type="module"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
     <title>KindOfDay</title>
 </head>
 
 <body>
-    <div class="screen">
-        <h1>Button1 or Button2?</h1>
-        <div class="box1"><input type="button" id="button1" value="button1" /> <h3 class="winnerText" id="hbutton1"></h3></div>
-        <div class="box2"><input type="button" id="button2" value="button2" /> <h3 class="winnerText" id="hbutton2"></h3></div>
-        <h3 class="winnerText" id="announcer"></h3>
-        <h1 id="counter">0</h1>
+    <div class="h-100 content">
+        <input id="room-code" value="<%=room%>">
+        <input id="username-code" value="<%=username%>">
+        <div class="first" id="room-info">
+        <h1 id="roomLabel">Room: <%=room%></h1>
+        <h2 id="usernameLabel">User: <%=username%></h2>
+        </div>
+
+        <div class="second" id="game-main">
+            <div class="screen">
+                <h1 id="start-text">Starting.....</h1>
+            </div>
+            <h2 id="user-count">Total Users 1</h2>
+        </div>
+        <div class="third" id="chatbox">
+            <ul id="message-list">
+                <li>MESSAGES:</li>
+            </ul>
+            <div class="message-form">
+                <input id="message-box" placeholder="Type Here to Chat">
+                <button id="send-message">Send</button>
+            </div>
+        </div>
     </div>
     <script src="https://cdn.socket.io/4.5.3/socket.io.min.js" integrity="sha384-WPFUvHkB1aHA5TDSZi6xtDgkF0wXJcIIxXhC6h8OT8EH3fC5PWro5pWJ1THjcfEi" crossorigin="anonymous"></script>
 
     <script>
         var socket = io.connect('http://localhost:3000');
+        //var socket = io.connect('http://143.198.62.135', {
+        //    withCredentials:true
+        //});
+
+
+        var roomCode = document.querySelector('#room-code').value;
+        var username = document.querySelector('#username-code').value;
+
+        socket.emit('create', {"room":roomCode, "username": username});
+
         var messages = document.getElementById('messages');
 
-        var button1 = document.getElementById('button1');
+        function isPositiveInteger(str) {
+            if (typeof str !== 'string') {
+                return false;
+            }
 
-        if(button1){
-            button1.addEventListener("click", function(e) {
-                socket.emit('button click', {'id':'button1'});
-            });
-        }   
-        var button2 = document.getElementById('button2');
-        if(button2){
-            button2.addEventListener("click", function(e) {
-                socket.emit('button click', {'value': button2.value, 'id':'button2'});
-            });
-        }   
+            const num = Number(str);
 
+            if (Number.isInteger(num) && num > 0) {
+                return true;
+            }
+
+            return false;
+        }
+
+        function addButtonEventListener(firstOption, secondOption) {
+            console.log("FIRST OPTION: " + firstOption + " SECOND OPTION:" + secondOption);
+            var button1 = document.getElementById('button1');
+            if(button1){
+                button1.addEventListener("click", function(e) {
+                    socket.emit('button click', {'id':firstOption, 'roomCode':roomCode});
+                });
+                button1.addEventListener("click", function onClick(event) {
+                    if (voted === false) {
+                        event.target.style.backgroundColor = "yellow";
+                        voted = true;
+                    }
+                });
+            }   
+            var button2 = document.getElementById('button2');
+            if(button2){
+                button2.addEventListener("click", function(e) {
+                    socket.emit('button click', {'id':secondOption, 'roomCode':roomCode});
+                });
+                button2.addEventListener("click", function onClick(event) {
+                    if (voted === false) {
+                        event.target.style.backgroundColor = "yellow";
+                        voted = true;
+                    }
+                });
+            }
+        }
+        //addButtonEventListener();
         var voted = false;
         socket.on('button msg', function(msg) {
+            console.log("THE WINNER IS :")
+            console.log(msg.winner)
+            let counter = 1;
             for (const [key, value] of Object.entries(msg.answers)) {
-                document.getElementById("h" + key).innerHTML = value;
+                document.getElementById(key).innerHTML = value;
+                counter += 1;
             }
-            console.log(msg.winner);
+
             if (msg.winner.length == 1) {
                 document.getElementById("announcer").innerHTML = "By majority vote: <i id='winner'>" + msg.winner[0] + "</i>";
             } else {
@@ -52,7 +112,7 @@
                    winnerString = winnerString + "," + e; 
                 });
                 winnerString = winnerString.slice(1,winnerString.length);
-                document.getElementById("announcer").innerHTML = "There was a tie between: <i id='winner'>" + winnerString + "</i>";
+                document.getElementById("announcer").innerHTML = "There was a tie between: <i id='winner'>" + winnerString + "<br>" + msg.tieWinner + " </i> was randomly chosen.";
             }
             // document.getElementById("button1").style.backgroundColor = "darkolivegreen";
             // document.getElementById("button2").style.backgroundColor = "saddlebrown";
@@ -69,24 +129,140 @@
             voted = false;
         });
 
+        socket.on('set board', function(msg) {
+            let game = document.querySelector(".screen");
+            game.replaceChildren();
+            var prompt = document.createElement("h1");
+            prompt.setAttribute("id", "prompt");
+            prompt.textContent = msg.prompt;
+            game.append(prompt);
+
+            for (var box = 1; box <= 2; box++) {
+                var boxDiv = document.createElement("div");
+                boxDiv.classList.add("box1");
+                var boxButton = document.createElement("button")
+                boxButton.value = "button" + box;
+                boxButton.setAttribute("id", "button"+box);
+                boxButton.setAttribute("type", "button");
+                boxButton.innerHTML = msg.roundOptions[box-1];
+
+                var boxResult = document.createElement("h3");
+                boxResult.setAttribute("id", msg.roundOptions[box-1]);
+                boxResult.classList.add("winnerText");
+                boxDiv.appendChild(boxButton);
+                boxDiv.appendChild(boxResult)
+                game.appendChild(boxDiv);
+            }
+
+            var announcerText = document.createElement("h3");
+            announcerText.classList.add("winnerText");
+            announcerText.setAttribute("id", "announcer");
+            game.appendChild(announcerText);
+
+            var counterText = document.createElement("h1");
+            counterText.setAttribute("id", "counter");
+            game.appendChild(counterText);
+
+
+            // document.getElementById("button1").style.backgroundColor = "darkolivegreen";
+            // document.getElementById("button2").style.backgroundColor = "saddlebrown";
+            voted = false;
+            addButtonEventListener(msg.roundOptions[0], msg.roundOptions[1]);
+        });
+
+        socket.on('admin panel', function(msg) {
+            var gameScreen = document.querySelector(".screen");
+
+
+            var promptSelect = document.createElement("input");
+            promptSelect.setAttribute("id", "promptSelect");
+            promptSelect.setAttribute("type", "text");
+            promptSelect.setAttribute("placeholder", "Type Prompt");
+            
+            var optionsSelect = document.createElement("input");
+            optionsSelect.setAttribute("id", "optionsSelect");
+            optionsSelect.setAttribute("type", "text");
+            optionsSelect.setAttribute("placeholder", "Type prompt answers separated by commas");
+            
+            var roundTimeSelect = document.createElement("input");
+            roundTimeSelect.setAttribute("id", "roundTimeSelect");
+            roundTimeSelect.setAttribute("type", "text");
+            roundTimeSelect.setAttribute("placeholder", "Default: 8 Sec");
+
+            gameScreen.appendChild(promptSelect);
+            gameScreen.appendChild(document.createElement("br"));
+            gameScreen.appendChild(optionsSelect);
+            gameScreen.appendChild(document.createElement("br"));
+            gameScreen.appendChild(roundTimeSelect);
+
+            var startGame = document.createElement("button");
+            startGame.setAttribute("id", "start");
+            startGame.setAttribute("type", "submit");
+            startGame.setAttribute("value", msg.room);
+            startGame.innerHTML = "START GAME";
+            gameScreen.appendChild(startGame);
+            startGame.addEventListener("click", function(e) {
+
+                var noDupes = Array.from(new Set(optionsSelect.value.split(",")));
+                var roundTime = isPositiveInteger(roundTimeSelect.value) ? parseInt(roundTimeSelect.value) : 8;
+                // If there is a prompt and atleast 2 options, start game.
+                if (noDupes.length >= 2 && promptSelect.value.length != 0) {
+            
+                    socket.emit('start game', {'room': startGame.value, 'prompt': promptSelect.value, 'options': noDupes, "roundTime": roundTime});
+                }
+            });
+        });
+
+        socket.on('end game', function(msg) { 
+            var gameScreen = document.querySelector(".screen");
+            var endMessage = document.createElement("h1");
+            endMessage.setAttribute("id", "end-msg");
+            endMessage.innerHTML = "VOTING ENDED!";
+
+            var winnerMessage = document.createElement("h1");
+            winnerMessage.setAttribute("id", "win-msg");
+            winnerMessage.innerHTML = "Winner: " + msg.winner;
+            gameScreen.replaceChildren(endMessage, winnerMessage);
+        });
+
         socket.on('counter', function(msg) { 
             document.getElementById('counter').innerHTML = msg + " sec";
         });
 
-        document.getElementById("button1").addEventListener("click", function onClick(event) {
-            if (voted === false) {
-                event.target.style.backgroundColor = "yellow";
-                voted = true;
+        socket.on('user count', function(msg) { 
+            document.querySelector('#user-count').innerHTML = "Total users: " + msg.userCount;
+        });
+
+        socket.on('recieve message', function(msg) {
+            let messageList = document.querySelector('#message-list');
+            let el = document.createElement('li');
+            el.innerHTML = msg;
+            messageList.appendChild(el)
+        });
+
+        document.getElementById("send-message").addEventListener("click", function onClick(event) {
+            let text = document.querySelector("#message-box").value;
+            if (text.length != 0) {
+                document.querySelector("#message-box").value = "";
+                socket.emit('sent message', {"text":text, 'roomCode':roomCode});
             }
         });
-        document.getElementById("button2").addEventListener("click", function onClick(event) {
-            if (voted === false) {
-                event.target.style.backgroundColor = "yellow";
-                voted = true;
+
+        document.getElementById("message-box").addEventListener("keyup", function(event) {
+            if (event.key === "Enter") {
+                console.log("ENTER CLICKED");
+                let text = document.querySelector("#message-box").value;
+                if (text.length != 0) {
+                    document.querySelector("#message-box").value = "";
+                    socket.emit('sent message', {"text": text, 'roomCode':roomCode});
+                }
             }
         });
 
     </script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.3/dist/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
 </body>
 
 </html>

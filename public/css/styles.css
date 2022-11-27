@@ -1,23 +1,29 @@
-html{
-    background-color:burlywood;
+html { 
+    height: 100%; 
+    
+}
+
+body {
+    background-color: grey !important;
     text-align:center;
+    height: 100%;
 }
 
 .box1 {
     display: inline-block;
-    background-color:darkolivegreen;
+    background-color:#D6D6D6;
     height: 100px;
     width: 300px;
 }
 
 .box2 {
     display: inline-block;
-    background-color: saddlebrown;
+    background-color: #D6D6D6;
     height: 100px;
     width: 300px;
 }
 
-input {
+.screen button {
     display: block;
     height: 100%;
     width: 100%;
@@ -29,9 +35,155 @@ input {
 }
 
 .winnerText {
-    color: gray;
+    color: mediumturquoise; /*mediumspringgreen*/
 }
 
 #winner {
-    color: maroon;
+    color: mediumspringgreen; /*maroon*/
 }
+
+#message-box {
+    display: inline-block;
+    width: 70%;
+    margin-bottom: auto;
+    color: #717579;
+    background-color: #717579;
+    border: none;
+    padding: 0.5vw 2vh;
+    font-size: 1vw;
+    border-radius: 1vh;
+}
+
+#send-message {
+    display: inline-block;
+    width: 20%;
+    flex: 1;
+    color: #D6D6D6;
+    background-color: #717579;
+    border: none;
+    padding: 0.5vw 2vh;
+    font-size: 1vw;
+    border-radius: 1vh;
+}
+
+.message-form {
+    /* display: flex; */
+    width: 100%; 
+}
+
+.content {
+    display: flex;
+    width: 100%;
+    text-align:center;
+}
+
+.first {
+    flex: 1;
+    background-color: #2C2b30;
+    color: #D6D6D6;
+}
+
+.second {
+    flex: 2;
+    background-color: #424549;
+}
+
+.third {
+    flex: 1;
+    background-color: #2C2b30;
+    color: #D6D6D6;
+    display:flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+#room-code, #username-code{
+    display:none;
+}
+
+
+li {
+    font-size: 35px;
+    list-style-type: None;
+}
+
+.screen input {
+    width:80%;
+}
+
+.screen button {
+    background-color:lightgreen;
+}
+
+#app-name {
+    position: absolute;
+    top: 35%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+}
+
+#username {
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+#room {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+#join-room {
+    position: absolute;
+    top: 55%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+#start-text, #user-count, #counter, #prompt, #end-msg, #win-msg {
+    color: #D6D6D6;
+}
+
+#button1 {
+    background-color: #D6D6D6;
+}
+
+#button2 {
+    background-color: #D6D6D6;
+}
+
+#roomLabel {
+    position: relative;
+    top: 15%;
+    /* left: 50%; */
+    transform: translate(0%, -50%);
+}
+
+#usernameLabel {
+    position: relative;
+    top: 15%;
+    /* left: 50%; */
+    transform: translate(0%, -50%);
+}
+
+/* Chrome, Firefox, Opera, Safari 10.1+ */
+::placeholder { 
+    color: #D6D6D6;
+    opacity: 1;
+  }
+  
+  /* Internet Explorer 10-11 */
+  :-ms-input-placeholder { 
+    color: #D6D6D6;
+  }
+  /* Microsoft Edge */
+  ::-ms-input-placeholder { 
+    color: #D6D6D6;
+  }
+  html, body, #app, #app>div {
+    height: 100%
+  }
