@@ -147,6 +147,7 @@ io.on('connection', (socket) => {
         var numClients = clients ? clients.size : 0;
         socket.nsp.to(roomName).emit("user count", {"userCount":numClients-1});
         delete userRooms[socket.id];
+        delete usernames[socket.id];
 
         checkRoomRemoval(); 
     });
