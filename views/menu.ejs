@@ -13,9 +13,13 @@
 <body>
     <div class="join-form">
         <h1 id="app-name">PickOne</h1>
-        <input id="username" placeholder="username">
+        <label for="username">Password</label>
+        <input id="username" placeholder="username" aria-describedby="userHelp">
+        <small id="userHelp" class="form-text text-muted">
+            Your username/room name should not contain #, &, or +.
+          </small>
         <input id="room" placeholder="room">
-        <button id="join-room" onclick="joinRoom();">JOIN</button>
+        <button id="join-room" type="button" class="btn btn-secondary" onclick="joinRoom();">JOIN</button>
     </div>
 
     <script>
