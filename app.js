@@ -20,6 +20,10 @@ app.get("/", (req, res) => {
     res.render("menu");
 });
 
+app.get("/create", (req, res) => {
+    res.render("create");
+});
+
 app.get("/:newRoom", (req, res) => {
     let newRoomName = req.params.newRoom;
     let username = req.query.value;
@@ -30,16 +34,20 @@ app.get("/:newRoom", (req, res) => {
 // var holdAnswers = {}; // Dictionary of counter of votes on each box
 // var voters = [];
 var roomsData = {};
+var roomsWait = {};
 var usernames = {};
+var userRooms = {};
 
 function emptyChoices(room) {
 
     roomsData[room]["holdAnswers"] = {}
+
+}
+
+function emptyChoicesWait(room) {
+
+    roomsWait[room]["holdAnswers"] = {}
     // Started index at 1, because element id's start at at button1.
-    let roomBoxes = roomsData[room]["boxes"];
-    for (let box = 1; box <= roomBoxes; box++){
-        roomsData[room]["holdAnswers"]["button" + box] = 0;
-    }
 }
 
 
@@ -61,14 +69,16 @@ function getWinner(currAnswers) {
     return winners;
 }
 
-function initializeRoom(room) {
-    roomInfo = {"counter": 0, "voters": [], "boxes":2, "holdAnswers":{}, "gameTime": 10};
+function initializeRoom(room, admin) {
+    roomInfo = {"counter": 0, "voters": [], "boxes":2, "holdAnswers":{}, "gameTime": 10, "admin": admin, "prompt": null, "options":[], "roundResults": {}, "round": 0, "roundReady":false};
     roomInfo["roundTime"] = Math.floor(roomInfo["gameTime"]*1.5);
-    roomsData[room] = roomInfo;
+    roomsWait[room] = roomInfo;
+    //roomsData[room] = roomInfo;
 }
 
 function checkRoomRemoval(room) {
     delete roomsData[room];
+    delete roomsWait[room];
 }
 
 io.on('connection', (socket) => {
@@ -83,21 +93,51 @@ io.on('connection', (socket) => {
         if (numClients == 0) {
             initializeRoom(msg.room);
             console.log(roomsData[msg.room]);
-            emptyChoices(msg.room);
+            emptyChoicesWait(msg.room);
+            io.to(socket.id).emit("admin panel", {"room": msg.room});
         }
 
         let exists = Object.values(usernames).includes(msg.username);
         if (!exists) {
             usernames[socket.id] = msg.username;
         }
+        userRooms[socket.id] = msg.room;
+
         console.log(usernames);
 
 
         socket.join(msg.room);
+
+        //Update numClients and send to all
+        //We add one to the previous amount of clients
+        numClients+=1
+        socket.nsp.to(msg.room).emit("user count", {"userCount":numClients});
     });
+
+    socket.on('start game', function(msg){
+        console.log("Starting ! :" + msg.prompt)
+        roomsWait[msg.room]["prompt"] = msg.prompt;
+        roomsWait[msg.room]["options"] = msg.options;
+        roomsData[msg.room] = roomsWait[msg.room] 
+
+        var roundOptions = roomsData[msg.room]["options"].splice(0,2);
+        roomsData[msg.room]["holdAnswers"][roundOptions[0]] = 0;
+        roomsData[msg.room]["holdAnswers"][roundOptions[1]] = 0;
+        roomsData[msg.room]["roundReady"] = true;
+
+        socket.nsp.to(msg.room).emit('set board', { 'answers': roomsData[msg.room]["holdAnswers"], "prompt": roomsData[msg.room]["prompt"], "roundOptions": roundOptions});
+        delete roomsWait[msg.room];
+    })
 
     socket.on("disconnecting", () => {
         console.log("current rooms after dcing", socket.rooms); // the Set contains at least the socket ID
+        
+        var roomName = userRooms[socket.id];
+        var clients = io.sockets.adapter.rooms.get(roomName);
+        var numClients = clients ? clients.size : 0;
+        socket.nsp.to(roomName).emit("user count", {"userCount":numClients-1});
+        delete userRooms[socket.id];
+
         checkRoomRemoval(); 
     });
 
@@ -130,11 +170,32 @@ io.on('connection', (socket) => {
                 // !TODO Winner determiner only supports two options.
                 let winners = getWinner(roomsData[key]["holdAnswers"]);
                 socket.nsp.to(key).emit('button msg', { 'answers': roomsData[key]["holdAnswers"], 'winner': winners});
+                roomsData[key]["roundReady"] = false;
             // Answers are cleared 2 seconds before gametime ends.
             } else if (roomsData[key]["counter"] == roomsData[key]["roundTime"]) {
-                socket.nsp.to(key).emit('reset msg', { 'answers': roomsData[key]["holdAnswers"]});
-                emptyChoices(key);
-                roomsData[key]["voters"] = [];
+                // socket.nsp.to(key).emit('reset msg', { 'answers': roomsData[key]["holdAnswers"]});
+
+                if (roomsData[key]["options"].length <= 1 && roomsData[key]["roundReady"] == false) {
+                    console.log("GAME ENDED!!");
+                    socket.nsp.to(key).emit('end game', {});
+                    roomsWait[key] = roomsData[key];
+                    delete roomsData[key];
+                } else if (roomsData[key]["options"].length > 1 && roomsData[key]["roundReady"] == false) {
+                    emptyChoices(key);
+                    var roundOptions = roomsData[key]["options"].splice(0,2);
+                    console.log(roundOptions[0]);
+                    console.log(roundOptions[1]);
+                    roomsData[key]["holdAnswers"][roundOptions[0]] = 0;
+                    roomsData[key]["holdAnswers"][roundOptions[1]] = 0;
+                    roomsData[key]["roundReady"] = true;
+            
+                    socket.nsp.to(key).emit('set board', { 'answers': roomsData[key]["holdAnswers"], "prompt": roomsData[key]["prompt"], "roundOptions": roundOptions});
+
+                    // socket.nsp.to(key).emit('set board', { 'answers': roomsData[key]["holdAnswers"]});
+                    roomsData[key]["voters"] = [];
+                } else {
+                    // DO NOTHING
+                }
             }
         }
     }, 500);

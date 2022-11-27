@@ -22,18 +22,13 @@
 
         <div class="second" id="game-main">
             <div class="screen">
-                <h1>Button1 or Button2?</h1>
-                <div class="box1"><input type="button" id="button1" value="button1" /> <h3 class="winnerText" id="hbutton1"></h3></div>
-                <div class="box2"><input type="button" id="button2" value="button2" /> <h3 class="winnerText" id="hbutton2"></h3></div>
-                <h3 class="winnerText" id="announcer"></h3>
-                <h1 id="counter">0</h1>
+                <h1>Game Starting.....</h1>
             </div>
+            <h2 id="user-count">Total Users 1</h2>
         </div>
         <div class="third" id="chatbox">
             <ul id="message-list">
-                <li>test</li>
-                <li>test1</li>
-                <li>test2</li>
+                <li>MESSAGES:</li>
             </ul>
             <div class="message-form">
                 <input id="message-box" placeholder="message">
@@ -52,23 +47,40 @@
 
         var messages = document.getElementById('messages');
 
-        var button1 = document.getElementById('button1');
-        if(button1){
-            button1.addEventListener("click", function(e) {
-                socket.emit('button click', {'id':'button1', 'roomCode':roomCode});
-            });
-        }   
-        var button2 = document.getElementById('button2');
-        if(button2){
-            button2.addEventListener("click", function(e) {
-                socket.emit('button click', {'value': button2.value, 'id':'button2', 'roomCode':roomCode});
-            });
-        }   
-
+        function addButtonEventListener(firstOption, secondOption) {
+            console.log("FIRST OPTION: " + firstOption + " SECOND OPTION:" + secondOption);
+            var button1 = document.getElementById('button1');
+            if(button1){
+                button1.addEventListener("click", function(e) {
+                    socket.emit('button click', {'id':firstOption, 'roomCode':roomCode});
+                });
+                button1.addEventListener("click", function onClick(event) {
+                    if (voted === false) {
+                        event.target.style.backgroundColor = "yellow";
+                        voted = true;
+                    }
+                });
+            }   
+            var button2 = document.getElementById('button2');
+            if(button2){
+                button2.addEventListener("click", function(e) {
+                    socket.emit('button click', {'id':secondOption, 'roomCode':roomCode});
+                });
+                button2.addEventListener("click", function onClick(event) {
+                    if (voted === false) {
+                        event.target.style.backgroundColor = "yellow";
+                        voted = true;
+                    }
+                });
+            }
+        }
+        //addButtonEventListener();
         var voted = false;
         socket.on('button msg', function(msg) {
+            let counter = 1;
             for (const [key, value] of Object.entries(msg.answers)) {
-                document.getElementById("h" + key).innerHTML = value;
+                document.getElementById("hbutton" + counter).innerHTML = value;
+                counter += 1;
             }
             console.log(msg.winner);
             if (msg.winner.length == 1) {
@@ -96,8 +108,91 @@
             voted = false;
         });
 
+        socket.on('set board', function(msg) {
+            let game = document.querySelector(".screen");
+            game.replaceChildren();
+            var prompt = document.createElement("h1");
+            prompt.textContent = msg.prompt;
+            game.append(prompt);
+
+            for (var box = 1; box <= 2; box++) {
+                var boxDiv = document.createElement("div");
+                boxDiv.classList.add("box1");
+                var boxButton = document.createElement("button")
+                boxButton.value = "button" + box;
+                boxButton.setAttribute("id", "button"+box);
+                boxButton.setAttribute("type", "button");
+                boxButton.innerHTML = msg.roundOptions[box-1];
+
+                var boxResult = document.createElement("h3");
+                boxResult.setAttribute("id", "hbutton"+box);
+                boxResult.classList.add("winnerText");
+                boxDiv.appendChild(boxButton);
+                boxDiv.appendChild(boxResult)
+                game.appendChild(boxDiv);
+            }
+
+            var announcerText = document.createElement("h3");
+            announcerText.classList.add("winnerText");
+            announcerText.setAttribute("id", "announcer");
+            game.appendChild(announcerText);
+
+            var counterText = document.createElement("h1");
+            counterText.setAttribute("id", "counter");
+            game.appendChild(counterText);
+
+
+            document.getElementById("button1").style.backgroundColor = "darkolivegreen";
+            document.getElementById("button2").style.backgroundColor = "saddlebrown";
+            voted = false;
+            addButtonEventListener(msg.roundOptions[0], msg.roundOptions[1]);
+        });
+
+        socket.on('admin panel', function(msg) {
+            var gameScreen = document.querySelector(".screen");
+
+
+            var promptSelect = document.createElement("input");
+            promptSelect.setAttribute("id", "promptSelect");
+            promptSelect.setAttribute("type", "text");
+            promptSelect.setAttribute("placeholder", "Type Prompt");
+            
+            var optionsSelect = document.createElement("input");
+            optionsSelect.setAttribute("id", "optionsSelect");
+            optionsSelect.setAttribute("type", "text");
+            optionsSelect.setAttribute("placeholder", "Type prompt answers separated by commas");
+            
+            gameScreen.appendChild(promptSelect);
+            gameScreen.appendChild(optionsSelect);
+
+            var startGame = document.createElement("button");
+            startGame.setAttribute("id", "start");
+            startGame.setAttribute("type", "submit");
+            startGame.setAttribute("value", msg.room);
+            startGame.innerHTML = "START GAME";
+            gameScreen.appendChild(startGame);
+            startGame.addEventListener("click", function(e) {
+                // If there is a prompt and atleast 2 options, start game.
+                if (optionsSelect.value.split(",").length >= 2 && promptSelect.value.length != 0) {
+            
+                    socket.emit('start game', {'room': startGame.value, 'prompt': promptSelect.value, 'options': optionsSelect.value.split(",")});
+                }
+            });
+        });
+
+        socket.on('end game', function(msg) { 
+            var gameScreen = document.querySelector(".screen");
+            var endMessage = document.createElement("h1");
+            endMessage.innerHTML = "GAME ENDED!";
+            gameScreen.replaceChildren(endMessage);
+        });
+
         socket.on('counter', function(msg) { 
             document.getElementById('counter').innerHTML = msg + " sec";
+        });
+
+        socket.on('user count', function(msg) { 
+            document.querySelector('#user-count').innerHTML = "Total users: " + msg.userCount;
         });
 
         socket.on('recieve message', function(msg) {
@@ -105,20 +200,6 @@
             let el = document.createElement('li');
             el.innerHTML = msg;
             messageList.appendChild(el)
-        });
-
-        document.getElementById("button1").addEventListener("click", function onClick(event) {
-            if (voted === false) {
-                event.target.style.backgroundColor = "yellow";
-                voted = true;
-            }
-        });
-
-        document.getElementById("button2").addEventListener("click", function onClick(event) {
-            if (voted === false) {
-                event.target.style.backgroundColor = "yellow";
-                voted = true;
-            }
         });
 
         document.getElementById("send-message").addEventListener("click", function onClick(event) {
