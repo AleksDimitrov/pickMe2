@@ -50,6 +50,14 @@ function emptyChoicesWait(room) {
     // Started index at 1, because element id's start at at button1.
 }
 
+function shuffleArray(array) {
+    for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
+}
 
 // Takes in a dictionary and a list representing the keys with highest value.
 // If there is a key with the highest value, an array of size 1 will be returned.
@@ -70,8 +78,8 @@ function getWinner(currAnswers) {
 }
 
 function initializeRoom(room, admin) {
-    roomInfo = {"counter": 0, "voters": [], "boxes":2, "holdAnswers":{}, "gameTime": 10, "admin": admin, "prompt": null, "options":[], "roundResults": {}, "round": 0, "roundReady":false};
-    roomInfo["roundTime"] = Math.floor(roomInfo["gameTime"]*1.5);
+    roomInfo = {"counter": 0, "voters": [], "boxes":2, "holdAnswers":{}, "gameTime": 8, "admin": admin, "prompt": null, "options":[], "roundWinners": [], "roundLosers": [], "roundResults": {}, "round": 0, "roundReady": false, "determinedWinner": false};
+    roomInfo["roundTime"] = Math.floor(roomInfo["gameTime"]*1.4);
     roomsWait[room] = roomInfo;
     //roomsData[room] = roomInfo;
 }
@@ -92,7 +100,6 @@ io.on('connection', (socket) => {
         // 0 Users connected to room, therefore room is empty.
         if (numClients == 0) {
             initializeRoom(msg.room);
-            console.log(roomsData[msg.room]);
             emptyChoicesWait(msg.room);
             io.to(socket.id).emit("admin panel", {"room": msg.room});
         }
@@ -103,7 +110,6 @@ io.on('connection', (socket) => {
         }
         userRooms[socket.id] = msg.room;
 
-        console.log(usernames);
 
 
         socket.join(msg.room);
@@ -120,10 +126,14 @@ io.on('connection', (socket) => {
         roomsWait[msg.room]["options"] = msg.options;
         roomsData[msg.room] = roomsWait[msg.room] 
 
+        shuffleArray(roomsData[msg.room]["options"]);
+
         var roundOptions = roomsData[msg.room]["options"].splice(0,2);
         roomsData[msg.room]["holdAnswers"][roundOptions[0]] = 0;
         roomsData[msg.room]["holdAnswers"][roundOptions[1]] = 0;
         roomsData[msg.room]["roundReady"] = true;
+        roomsData[msg.room]["gameTime"] = msg.roundTime;
+        roomsData[msg.room]["roundTime"] = Math.floor(roomInfo["gameTime"]*1.4);
 
         socket.nsp.to(msg.room).emit('set board', { 'answers': roomsData[msg.room]["holdAnswers"], "prompt": roomsData[msg.room]["prompt"], "roundOptions": roundOptions});
         delete roomsWait[msg.room];
@@ -168,26 +178,77 @@ io.on('connection', (socket) => {
             if (roomsData[key]["counter"] == roomsData[key]["gameTime"]+1) {
                 //winningKey is a reduce function that determines key with highest value.
                 // !TODO Winner determiner only supports two options.
-                let winners = getWinner(roomsData[key]["holdAnswers"]);
-                socket.nsp.to(key).emit('button msg', { 'answers': roomsData[key]["holdAnswers"], 'winner': winners});
-                roomsData[key]["roundReady"] = false;
+                if (roomsData[key]["determinedWinner"] == false) {
+                    roomsData[key]["determinedWinner"] = true;
+                    let winners = getWinner(roomsData[key]["holdAnswers"]);
+
+                    // !TODO 
+                    // PLEASE READ!
+                    // Ties are currently handled by picking a random option from the ones involved in the
+                    // tie. Consider changing later.
+                    var tieWinner = "None";
+
+                    if (winners.length > 1) {
+                        var tieWinnerIndex = Math.floor(Math.random()*winners.length);
+                        tieWinner = winners[tieWinnerIndex];
+                        roomsData[key]["roundWinners"].push(tieWinner);
+                        if (tieWinnerIndex == 0) {
+                            roomsData[key]["roundLosers"].push(winners[1]);
+                        } else {
+                            roomsData[key]["roundLosers"].push(winners[0]);
+                        }
+                    } else {
+                        tieWinner = winners[0];
+                        roomsData[key]["roundWinners"].push(tieWinner);
+                    }
+
+                    // This commented algorithm acts as if there was no tie, and adds both options
+                    // as winners. 
+                    // for(option in roomsData[key]["holdAnswers"]) {
+                    //     if (winners.includes(option) && onlyOneWinner == false) {
+                    //         roomsData[key]["roundWinners"].push(option);
+                    //     } else {
+                    //         roomsData[key]["roundLosers"].push(option);
+                    //     }
+                    // }
+
+
+                    console.log(roomsData[key]["holdAnswers"]);
+                    socket.nsp.to(key).emit('button msg', { 'answers': roomsData[key]["holdAnswers"], 'winner': winners, "tieWinner":tieWinner});
+                    emptyChoices(key);
+                    roomsData[key]["roundReady"] = false;
+                }
             // Answers are cleared 2 seconds before gametime ends.
             } else if (roomsData[key]["counter"] == roomsData[key]["roundTime"]) {
                 // socket.nsp.to(key).emit('reset msg', { 'answers': roomsData[key]["holdAnswers"]});
+                if (roomsData[key]["options"].length == 0 && roomsData[key]["roundReady"] == false && roomsData[key]["roundWinners"].length > 1) {
+                    //If there is no more options for this round, carry on to next round
+                    roomsData[key]["options"] = roomsData[key]["roundWinners"]
+                    shuffleArray(roomsData[key]["options"]);
+                    roomsData[key]["roundWinners"] = [];
+                    roomsData[key]["roundLosers"] = [];
+                    roomsData[key]["round"]+=1;
+                } else if (roomsData[key]["options"].length == 1 && roomsData[key]["roundReady"] == false && roomsData[key]["roundWinners"].length >= 1) {
+                    // If there is an individual option left, just pass it to the next round.
+                    roomsData[key]["roundWinners"].push(roomsData[key]["options"][0]);
+                    roomsData[key]["options"] = roomsData[key]["roundWinners"];
+                    shuffleArray(roomsData[key]["options"]);
+                    roomsData[key]["roundWinners"] = [];
+                    roomsData[key]["roundLosers"] = [];
+                    roomsData[key]["round"]+=1;
+                }
 
                 if (roomsData[key]["options"].length <= 1 && roomsData[key]["roundReady"] == false) {
                     console.log("GAME ENDED!!");
-                    socket.nsp.to(key).emit('end game', {});
+                    socket.nsp.to(key).emit('end game', {"winner": roomsData[key]["roundWinners"][0]});
                     roomsWait[key] = roomsData[key];
                     delete roomsData[key];
                 } else if (roomsData[key]["options"].length > 1 && roomsData[key]["roundReady"] == false) {
-                    emptyChoices(key);
                     var roundOptions = roomsData[key]["options"].splice(0,2);
-                    console.log(roundOptions[0]);
-                    console.log(roundOptions[1]);
                     roomsData[key]["holdAnswers"][roundOptions[0]] = 0;
                     roomsData[key]["holdAnswers"][roundOptions[1]] = 0;
                     roomsData[key]["roundReady"] = true;
+                    roomsData[key]["determinedWinner"] = false;
             
                     socket.nsp.to(key).emit('set board', { 'answers': roomsData[key]["holdAnswers"], "prompt": roomsData[key]["prompt"], "roundOptions": roundOptions});
 

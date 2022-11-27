@@ -88,5 +88,14 @@ body {
 
 
 li {
-    font-size: 70px;
+    font-size: 35px;
+    list-style-type: None;
+}
+
+.screen input {
+    width:80%;
+}
+
+.screen button {
+    background-color:green;
 }

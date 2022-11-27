@@ -16,8 +16,8 @@
         <input id="room-code" value="<%=room%>">
         <input id="username-code" value="<%=username%>">
         <div class="first" id="room-info">
-        <h1><%=room%></h1>
-        <h2><%=username%></h2>
+        <h1>Room: <%=room%></h1>
+        <h2>User: <%=username%></h2>
         </div>
 
         <div class="second" id="game-main">
@@ -40,12 +40,31 @@
 
     <script>
         var socket = io.connect('http://localhost:3000');
+        //var socket = io.connect('http://143.198.62.135', {
+        //    withCredentials:true
+        //});
+
+
         var roomCode = document.querySelector('#room-code').value;
         var username = document.querySelector('#username-code').value;
 
         socket.emit('create', {"room":roomCode, "username": username});
 
         var messages = document.getElementById('messages');
+
+        function isPositiveInteger(str) {
+            if (typeof str !== 'string') {
+                return false;
+            }
+
+            const num = Number(str);
+
+            if (Number.isInteger(num) && num > 0) {
+                return true;
+            }
+
+            return false;
+        }
 
         function addButtonEventListener(firstOption, secondOption) {
             console.log("FIRST OPTION: " + firstOption + " SECOND OPTION:" + secondOption);
@@ -77,12 +96,14 @@
         //addButtonEventListener();
         var voted = false;
         socket.on('button msg', function(msg) {
+            console.log("THE WINNER IS :")
+            console.log(msg.winner)
             let counter = 1;
             for (const [key, value] of Object.entries(msg.answers)) {
-                document.getElementById("hbutton" + counter).innerHTML = value;
+                document.getElementById(key).innerHTML = value;
                 counter += 1;
             }
-            console.log(msg.winner);
+
             if (msg.winner.length == 1) {
                 document.getElementById("announcer").innerHTML = "By majority vote: <i id='winner'>" + msg.winner[0] + "</i>";
             } else {
@@ -91,7 +112,7 @@
                    winnerString = winnerString + "," + e; 
                 });
                 winnerString = winnerString.slice(1,winnerString.length);
-                document.getElementById("announcer").innerHTML = "There was a tie between: <i id='winner'>" + winnerString + "</i>";
+                document.getElementById("announcer").innerHTML = "There was a tie between: <i id='winner'>" + winnerString + "<br>" + msg.tieWinner + " </i> was randomly chosen.";
             }
             // document.getElementById("button1").style.backgroundColor = "darkolivegreen";
             // document.getElementById("button2").style.backgroundColor = "saddlebrown";
@@ -125,7 +146,7 @@
                 boxButton.innerHTML = msg.roundOptions[box-1];
 
                 var boxResult = document.createElement("h3");
-                boxResult.setAttribute("id", "hbutton"+box);
+                boxResult.setAttribute("id", msg.roundOptions[box-1]);
                 boxResult.classList.add("winnerText");
                 boxDiv.appendChild(boxButton);
                 boxDiv.appendChild(boxResult)
@@ -162,8 +183,16 @@
             optionsSelect.setAttribute("type", "text");
             optionsSelect.setAttribute("placeholder", "Type prompt answers separated by commas");
             
+            var roundTimeSelect = document.createElement("input");
+            roundTimeSelect.setAttribute("id", "roundTimeSelect");
+            roundTimeSelect.setAttribute("type", "text");
+            roundTimeSelect.setAttribute("placeholder", "Default: 8 Sec");
+
             gameScreen.appendChild(promptSelect);
+            gameScreen.appendChild(document.createElement("br"));
             gameScreen.appendChild(optionsSelect);
+            gameScreen.appendChild(document.createElement("br"));
+            gameScreen.appendChild(roundTimeSelect);
 
             var startGame = document.createElement("button");
             startGame.setAttribute("id", "start");
@@ -172,10 +201,13 @@
             startGame.innerHTML = "START GAME";
             gameScreen.appendChild(startGame);
             startGame.addEventListener("click", function(e) {
+
+                var noDupes = Array.from(new Set(optionsSelect.value.split(",")));
+                var roundTime = isPositiveInteger(roundTimeSelect.value) ? parseInt(roundTimeSelect.value) : 8;
                 // If there is a prompt and atleast 2 options, start game.
-                if (optionsSelect.value.split(",").length >= 2 && promptSelect.value.length != 0) {
+                if (noDupes.length >= 2 && promptSelect.value.length != 0) {
             
-                    socket.emit('start game', {'room': startGame.value, 'prompt': promptSelect.value, 'options': optionsSelect.value.split(",")});
+                    socket.emit('start game', {'room': startGame.value, 'prompt': promptSelect.value, 'options': noDupes, "roundTime": roundTime});
                 }
             });
         });
@@ -184,7 +216,10 @@
             var gameScreen = document.querySelector(".screen");
             var endMessage = document.createElement("h1");
             endMessage.innerHTML = "GAME ENDED!";
-            gameScreen.replaceChildren(endMessage);
+
+            var winnerMessage = document.createElement("h1");
+            winnerMessage.innerHTML = "Winner: " + msg.winner;
+            gameScreen.replaceChildren(endMessage, winnerMessage);
         });
 
         socket.on('counter', function(msg) { 
