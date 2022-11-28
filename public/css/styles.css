@@ -10,17 +10,22 @@ body {
 }
 
 .box1 {
-    display: inline-block;
+    display: inline-block;/*none*/
     background-color:#D6D6D6;
     height: 100px;
     width: 300px;
+    border-radius: 2vw;
+    margin-right: 50px;
+    position: relative;
+    left: 3%;
 }
 
 .box2 {
-    display: inline-block;
+    display: inline-block;/*none*/
     background-color: #D6D6D6;
     height: 100px;
     width: 300px;
+    /* margin-right: 50px; */
 }
 
 .screen button {
@@ -256,21 +261,39 @@ ul {
 #user-count{
     color: #D6D6D6;
     font-size: 1.5vw;
-    margin-top: 3vw;
+    margin-top: 1vw; /* margin-top: 3vw; */
 }
 
 #counter, #prompt, #end-msg, #win-msg {
     color: #D6D6D6;
 }
 
+#prompt, #end-msg {
+    margin-top: 10vh;
+}
+
 #button1 {
-    background-color: #D6D6D6;
+    /* display: inline-block; */
+    position: relative;
+    right: 40%;
+    bottom: 14%;
+    background-color:#D6D6D6;
+    height: 100px;
+    width: 300px;
     border-radius: 2vw;
+    /* margin-right: 50px; */
 }
 
 #button2 {
-    background-color: #D6D6D6;
+    /* display: inline-block; */
+    position: relative;
+    right: 40%;
+    bottom: 14%;
+    background-color:#D6D6D6;
+    height: 100px;
+    width: 300px;
     border-radius: 2vw;
+    /* margin-right: 50px; */
 }
 
 #roomLabel {
@@ -290,17 +313,17 @@ ul {
 
 /* Chrome, Firefox, Opera, Safari 10.1+ */
 ::placeholder { 
-    color: #434242;
+    color: #717579;
     opacity: 1;
   }
   
   /* Internet Explorer 10-11 */
   :-ms-input-placeholder { 
-    color: #434242;
+    color: #717579;
   }
   /* Microsoft Edge */
   ::-ms-input-placeholder { 
-    color: #434242;
+    color: #717579;
   }
   html, body, #app, #app>div {
     height: 100%
