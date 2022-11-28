@@ -188,7 +188,7 @@ ul {
 
 #app-name {
     position: absolute;
-    top: 35%;
+    top: 37%;
     left: 50%;
     transform: translate(-50%, -50%);
     font-size: 48px;
@@ -309,6 +309,13 @@ ul {
     font-size: 1vw;
     color: #F3EFE0;
     transform: translate(0%, -50%);
+}
+
+#logo-img {
+    position: absolute;
+    left: 47%;
+    top: 20%; /*28%;*/
+    z-index: -1;
 }
 
 /* Chrome, Firefox, Opera, Safari 10.1+ */
