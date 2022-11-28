@@ -255,8 +255,8 @@ ul {
 
 #user-count{
     color: #D6D6D6;
-    font-size: 2vw;
-    margin-top: 1vw;
+    font-size: 1.5vw;
+    margin-top: 3vw;
 }
 
 #counter, #prompt, #end-msg, #win-msg {
