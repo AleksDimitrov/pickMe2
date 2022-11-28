@@ -46,12 +46,29 @@ body {
     display: inline-block;
     width: 70%;
     margin-bottom: auto;
-    color: #717579;
-    background-color: #717579;
+    color: #222222;
+    background-color: #D6D6D6;
     border: none;
     padding: 0.5vw 2vh;
     font-size: 1vw;
     border-radius: 1vh;
+    border-color: #22A39F;
+    box-shadow: 0px 8px 8px -4px #5a5a5a;
+}
+
+.questionInputs {
+    display: inline-block;
+    width: 1vw;
+    margin-bottom: auto;
+    color: #222222;
+    background-color: #D6D6D6;
+    border: none;
+    padding: 0.5vw 2vh;
+    font-size: 1vw;
+    border-radius: 1vh;
+    border-color: #22A39F;
+    box-shadow: 0px 8px 8px -2px #202020;
+    margin: 1vw;
 }
 
 #send-message {
@@ -67,8 +84,8 @@ body {
 }
 
 .message-form {
-    /* display: flex; */
     width: 100%; 
+    margin-top: 1vh;
 }
 
 .content {
@@ -78,23 +95,45 @@ body {
 }
 
 .first {
-    flex: 1;
-    background-color: #2C2b30;
-    color: #D6D6D6;
+    width: 20vw;
+    background-color: #222222;
+    color: #F3EFE0;
+    padding-left: 1vw;
+    padding-right: 1vw;
+    border-right: solid;
+    border-color: #F3EFE0;
+    border-width: 0.1vw;
+    box-shadow: 8px 3px 10px 0px #696969 ;
 }
 
 .second {
     flex: 2;
-    background-color: #424549;
+    background-color: #434242;
+    box-shadow: 8px 10px 10px 0px #292929 inset;
 }
 
 .third {
-    flex: 1;
-    background-color: #2C2b30;
-    color: #D6D6D6;
-    display:flex;
-    flex-direction: column;
-    justify-content: space-between;
+    background-color: #222222;
+    width: 25vw;
+    border-left: solid;
+    border-color: #F3EFE0;
+    border-width: 0.1vw;
+}
+
+.messageTitle {
+    text-align: left;
+    padding-left: 1vw;
+    padding-top: 2vh;
+    background-color: #222222;
+    font-size: 2vw;
+    font-family: sans-serif;
+    color: #F3EFE0;
+}
+
+.chatBox {
+    height: 75vh;
+    background-color: #434242;
+    color: #F3EFE0;
 }
 
 #room-code, #username-code{
@@ -103,16 +142,43 @@ body {
 
 
 li {
-    font-size: 35px;
+    width: 15vw;
+    height: 5vw;
+
     list-style-type: None;
+
+    background-color: #F3EFE0;
+    color: #222222;
+
+    font-size: 1vw;
+
+    border-radius: 1vw;
+    box-shadow: 0 8px 8px -4px #222222;
+
+    margin-top: 2vw;
+    margin-bottom: 2vw;
+}
+
+ul {
+    margin:0;
+    padding-left:1vw;
 }
 
 .screen input {
-    width:80%;
+    width:50%;
+    height:3vw;
 }
 
 .screen button {
-    background-color:lightgreen;
+    background-color:#22A39F;
+    border-width: 0.1vw;
+    width: 10vw;
+    height: 6vh;
+    font-size: 1.5vw;
+    color:#F3EFE0; 
+    border-radius: 0.8vw;
+    margin-left: 40%;
+    margin-top: 2vh;
 }
 
 #app-name {
@@ -145,13 +211,10 @@ li {
     top: 49%;
     left: 50%;
     transform: translate(-50%, -50%);
-    /* width: 25%; */
     margin-bottom: auto;
-    /* border: none;
-    padding: 0.5vw 2vh;
-    font-size: 1vw;
-    border-radius: 1vh; */
 }
+
+
 
 #room {
     position: absolute;
@@ -178,45 +241,66 @@ li {
     color: #F3EFE0;
 }
 
-#start-text, #user-count, #counter, #prompt, #end-msg, #win-msg {
+#start-text {
+    color: #D6D6D6;
+    font-size: 5vw;
+    margin-top: 1vw;
+}
+
+#instruction {
+    color: #D6D6D6;
+    font-size: 1.5vw;
+    margin-top: 0.2vw;
+}
+
+#user-count{
+    color: #D6D6D6;
+    font-size: 2vw;
+    margin-top: 1vw;
+}
+
+#counter, #prompt, #end-msg, #win-msg {
     color: #D6D6D6;
 }
 
 #button1 {
     background-color: #D6D6D6;
+    border-radius: 2vw;
 }
 
 #button2 {
     background-color: #D6D6D6;
+    border-radius: 2vw;
 }
 
 #roomLabel {
     position: relative;
     top: 15%;
-    /* left: 50%; */
+    font-size: 3vw;
     transform: translate(0%, -50%);
 }
 
 #usernameLabel {
     position: relative;
     top: 15%;
-    /* left: 50%; */
+    font-size: 1vw;
+    color: #F3EFE0;
     transform: translate(0%, -50%);
 }
 
 /* Chrome, Firefox, Opera, Safari 10.1+ */
 ::placeholder { 
-    color: #D6D6D6;
+    color: #434242;
     opacity: 1;
   }
   
   /* Internet Explorer 10-11 */
   :-ms-input-placeholder { 
-    color: #D6D6D6;
+    color: #434242;
   }
   /* Microsoft Edge */
   ::-ms-input-placeholder { 
-    color: #D6D6D6;
+    color: #434242;
   }
   html, body, #app, #app>div {
     height: 100%

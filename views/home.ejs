@@ -13,28 +13,44 @@
 
 <body>
     <div class="h-100 content">
+
         <input id="room-code" value="<%=room%>">
         <input id="username-code" value="<%=username%>">
+
+        <!-- Room Information (left) -->
         <div class="first" id="room-info">
-        <h1 id="roomLabel">Room: <%=room%></h1>
+        <h1 id="roomLabel"><%=room%></h1>
         <h2 id="usernameLabel">User: <%=username%></h2>
         </div>
 
+        <!-- Main Game  (middle) -->
         <div class="second" id="game-main">
             <div class="screen">
-                <h1 id="start-text">Starting.....</h1>
+                <h1 id="start-text">
+                    Create Question
+                    <div id="instruction"> Please create a question and press start to continue</div>
+                </h1>
+                
             </div>
-            <h2 id="user-count">Total Users 1</h2>
         </div>
+
+        <!-- Chat Box (right) --> 
         <div class="third" id="chatbox">
-            <ul id="message-list">
-                <li>MESSAGES:</li>
-            </ul>
+
+            <div class="messageTitle">Team Chat</div>
+            
+            <!-- Box full of messages -->
+            <div class="chatBox">
+                <ul  id="message-list"></ul>
+            </div>
+
             <div class="message-form">
                 <input id="message-box" placeholder="Type Here to Chat">
                 <button id="send-message">Send</button>
             </div>
+            <h2 id="user-count">Total Users 1</h2>
         </div>
+        
     </div>
     <script src="https://cdn.socket.io/4.5.3/socket.io.min.js" integrity="sha384-WPFUvHkB1aHA5TDSZi6xtDgkF0wXJcIIxXhC6h8OT8EH3fC5PWro5pWJ1THjcfEi" crossorigin="anonymous"></script>
 
@@ -178,29 +194,34 @@
             promptSelect.setAttribute("id", "promptSelect");
             promptSelect.setAttribute("type", "text");
             promptSelect.setAttribute("placeholder", "Type Prompt");
+            promptSelect.classList.add("questionInputs");
             
             var optionsSelect = document.createElement("input");
             optionsSelect.setAttribute("id", "optionsSelect");
             optionsSelect.setAttribute("type", "text");
             optionsSelect.setAttribute("placeholder", "Type prompt answers separated by commas");
-            
+            optionsSelect.classList.add("questionInputs");
+
             var roundTimeSelect = document.createElement("input");
             roundTimeSelect.setAttribute("id", "roundTimeSelect");
             roundTimeSelect.setAttribute("type", "text");
             roundTimeSelect.setAttribute("placeholder", "Default: 8 Sec");
+            roundTimeSelect.classList.add("questionInputs");
+
+            var startGame = document.createElement("button");
+            startGame.setAttribute("id", "start");
+            startGame.setAttribute("type", "submit");
+            startGame.setAttribute("value", msg.room);
+            startGame.innerHTML = "Start";
+
 
             gameScreen.appendChild(promptSelect);
             gameScreen.appendChild(document.createElement("br"));
             gameScreen.appendChild(optionsSelect);
             gameScreen.appendChild(document.createElement("br"));
             gameScreen.appendChild(roundTimeSelect);
-
-            var startGame = document.createElement("button");
-            startGame.setAttribute("id", "start");
-            startGame.setAttribute("type", "submit");
-            startGame.setAttribute("value", msg.room);
-            startGame.innerHTML = "START GAME";
             gameScreen.appendChild(startGame);
+
             startGame.addEventListener("click", function(e) {
 
                 var noDupes = Array.from(new Set(optionsSelect.value.split(",")));
